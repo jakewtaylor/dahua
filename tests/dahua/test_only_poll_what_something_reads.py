@@ -42,6 +42,7 @@ def _coordinator(**kwargs):
         "amcrest_doorbell": False,
         "flood_light": False,
         "floodlightmode": False,
+        "coaxial_flood_light": False,
         "platforms": [LIGHT, SWITCH],
     }
     state.update(kwargs)
@@ -54,6 +55,7 @@ def _coordinator(**kwargs):
         supports_security_light=lambda: state["security_light"],
         is_amcrest_doorbell=lambda: state["amcrest_doorbell"],
         is_flood_light=lambda: state["flood_light"],
+        flood_light_uses_coaxial=lambda: state["coaxial_flood_light"],
         _wanted_by=lambda *wanted: any(w in state["platforms"] for w in wanted),
     )
     for name in (
@@ -119,6 +121,15 @@ def test_a_flood_light_on_firmware_without_floodlightmode_is_not_asked():
     coordinator = _coordinator(flood_light=True, floodlightmode=False)
 
     assert coordinator.reads_coaxial_status() is False
+
+
+def test_a_flood_light_switched_through_coaxial_is_asked():
+    """The Yale YFL01 has no floodlightmode but reads WhiteLight out of this status."""
+    coordinator = _coordinator(
+        flood_light=True, floodlightmode=False, coaxial_flood_light=True
+    )
+
+    assert coordinator.reads_coaxial_status() is True
 
 
 def test_a_flood_light_still_needs_the_light_platform():

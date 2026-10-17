@@ -4115,7 +4115,7 @@ class DahuaDataUpdateCoordinator(DataUpdateCoordinator):
             or "L46N" in m
             or m.startswith("V261LC")
             or m.startswith("W452ASD")
-            # Yale YFL01-BLK, an IPC-L26 rebrand with the ASH26 Lighting_V2 layout
+            # Yale YFL01-BLK, an IPC-L26 rebrand. See flood_light_uses_coaxial
             or m.startswith("YFL01")
         )
 
@@ -4135,6 +4135,18 @@ class DahuaDataUpdateCoordinator(DataUpdateCoordinator):
     def supports_floodlightmode(self) -> bool:
         """Returns true if this camera supports floodlight mode"""
         return "W452ASD" in self.model.upper() or "L46N" in self.model.upper()
+
+    def flood_light_uses_coaxial(self) -> bool:
+        """
+        Returns true if the flood light switches through coaxialControlIO on a camera
+        that has no floodlightmode.
+
+        Measured on a Yale YFL01-BLK (2.680.101K002.0.R): it refuses FloodLightMode.
+        Both Lighting_V2[0][profile][1].Mode=Manual and coaxialControlIO Type=1 light
+        the lamp, but only the coaxial command moves WhiteLight in getStatus, so it is
+        the only path whose state can be read back.
+        """
+        return self.model.upper().startswith("YFL01")
 
     def supports_illuminator(self) -> bool:
         """
@@ -4314,6 +4326,11 @@ class DahuaDataUpdateCoordinator(DataUpdateCoordinator):
         """
         if self.is_amcrest_doorbell():
             return False
+        # getCaps reports SupportControlLight, but coaxial Type=1 is the flood light
+        # itself, which the flood light entity already switches. There is no separate
+        # red/blue light, so a second entity would race the same output.
+        if self.flood_light_uses_coaxial():
+            return False
         # Both sensor channels on this camera address one chassis-wide warning
         # circuit. Keep one entity on the primary channel rather than exposing
         # two controls that race the same output.
@@ -4350,7 +4367,9 @@ class DahuaDataUpdateCoordinator(DataUpdateCoordinator):
             # The flood light only reads the coaxial status on firmware that reports
             # floodlightmode. Without it the same entity reads Lighting_V2 instead, and
             # fetching this would be pointless for it too.
-            if self.is_flood_light() and self._supports_floodlightmode:
+            if self.is_flood_light() and (
+                self._supports_floodlightmode or self.flood_light_uses_coaxial()
+            ):
                 return True
         return False
 
@@ -4819,7 +4838,7 @@ class DahuaDataUpdateCoordinator(DataUpdateCoordinator):
 
     def is_flood_light_on(self) -> bool:
 
-        if self._supports_floodlightmode:
+        if self._supports_floodlightmode or self.flood_light_uses_coaxial():
             # 'coaxialControlIO.cgi?action=getStatus&channel=1'
             return self.get_status_value("WhiteLight").lower() == "on"
         else:

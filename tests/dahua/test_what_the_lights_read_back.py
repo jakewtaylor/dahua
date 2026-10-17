@@ -37,6 +37,7 @@ def _coordinator(
     c._channel = CHANNEL
     c.data = dict(data or {})
     c._supports_floodlightmode = floodlightmode
+    c.flood_light_uses_coaxial = lambda: False
     c.get_profile_mode = lambda: profile
     c.get_illuminator_index = lambda: index
     c.get_illuminator_bank = lambda: bank

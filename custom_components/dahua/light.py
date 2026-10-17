@@ -1315,6 +1315,12 @@ class FloodLight(DahuaBaseEntity, LightEntity):
                     channel, SECURITY_LIGHT_TYPE, True
                 )
             await self._coordinator.async_refresh()
+        elif self._coordinator.flood_light_uses_coaxial():
+            # No floodlightmode to save and restore; the camera refuses it.
+            await self._coordinator.client.async_set_coaxial_control_state(
+                self._coordinator.get_channel_number(), SECURITY_LIGHT_TYPE, True
+            )
+            await self._coordinator.async_refresh()
         else:
             channel = self._coordinator.get_channel()
             profile_mode = self._coordinator.get_profile_mode()
@@ -1347,6 +1353,11 @@ class FloodLight(DahuaBaseEntity, LightEntity):
                     self._coordinator._floodlight_mode
                 )
                 self._coordinator._floodlight_mode = None
+            await self._coordinator.async_refresh()
+        elif self._coordinator.flood_light_uses_coaxial():
+            await self._coordinator.client.async_set_coaxial_control_state(
+                self._coordinator.get_channel_number(), SECURITY_LIGHT_TYPE, False
+            )
             await self._coordinator.async_refresh()
         else:
             channel = self._coordinator.get_channel()

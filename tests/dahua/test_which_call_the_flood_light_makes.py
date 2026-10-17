@@ -69,6 +69,7 @@ def _flood_light(*, supports_floodlightmode, is_nvr_channel):
         _floodlight_mode=2,
         get_channel=lambda: CHANNEL_INDEX,
         get_channel_number=lambda: CHANNEL_NUMBER,
+        flood_light_uses_coaxial=lambda: False,
         get_profile_mode=lambda: PROFILE_MODE,
         is_nvr_channel=lambda: is_nvr_channel,
         async_refresh=_never,

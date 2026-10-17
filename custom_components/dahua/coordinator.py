@@ -4115,6 +4115,8 @@ class DahuaDataUpdateCoordinator(DataUpdateCoordinator):
             or "L46N" in m
             or m.startswith("V261LC")
             or m.startswith("W452ASD")
+            # Yale YFL01-BLK, an IPC-L26 rebrand with the ASH26 Lighting_V2 layout
+            or m.startswith("YFL01")
         )
 
     def supports_infrared_light(self) -> bool:
